@@ -36,7 +36,7 @@ public class DockerContainerHolder<T extends DockerContainer> implements Provide
      */
     @Inject(optional = true)
     @Named("dockerPortOffset")
-    private int portOffset = 0;
+    private Integer portOffset = 0;
 
     /**
      * Lazily starts a container and returns the instance.
@@ -61,7 +61,7 @@ public class DockerContainerHolder<T extends DockerContainer> implements Provide
      */
     @Override
     public void close() throws IOException {
-        if (container!=null) {
+        if (container != null) {
             container.close();
             container = null;
         }
