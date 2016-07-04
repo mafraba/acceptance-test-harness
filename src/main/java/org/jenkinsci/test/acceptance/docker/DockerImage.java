@@ -177,6 +177,9 @@ public class DockerImage {
 
             DockerFixture fixtureAnnotation = type.getAnnotation(DockerFixture.class);
             ports = fixtureAnnotation.ports();
+            if (fixtureAnnotation.matchHostPorts()) {
+                portOffset = 0;
+            }
         }
 
         public @Nonnull Starter<T> withPorts(int... ports) {

@@ -36,7 +36,7 @@ public class DockerContainerHolder<T extends DockerContainer> implements Provide
      */
     @Inject(optional = true)
     @Named("dockerPortOffset")
-    private Integer portOffset = 0;
+    private Integer portOffset;
 
     /**
      * Lazily starts a container and returns the instance.

@@ -17,7 +17,7 @@ import java.io.IOException;
  *
  * @author Tobias Meyer
  */
-@DockerFixture(id = "ftpd", ports = {21, 30000, 30001, 30002, 30003, 30004, 30005, 30006, 30007, 30008, 30009})
+@DockerFixture(id = "ftpd", matchHostPorts = true, ports = {21, 30000, 30001, 30002, 30003, 30004, 30005, 30006, 30007, 30008, 30009})
 public class FtpdContainer extends DockerContainer implements IPasswordDockerContainer {
     private FTPClient ftpClient;
 

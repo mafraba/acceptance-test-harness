@@ -22,7 +22,7 @@ import org.junit.experimental.categories.Category;
  */
 @WithPlugins("publish-over-ftp")
 @Category(DockerTest.class)
-@WithDocker(localOnly=false)
+@WithDocker(localOnly=true)
 public class FtpPublishPluginTest extends GlobalPublishPluginTest<FtpdContainer> {
 
     @Override
