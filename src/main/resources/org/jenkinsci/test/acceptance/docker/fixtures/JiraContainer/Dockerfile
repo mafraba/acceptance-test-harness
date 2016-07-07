@@ -2,7 +2,7 @@
 # Runs JIRA
 #
 #    The initial password is 'admin:admin'
-# 
+#
 FROM ubuntu:xenial
 
 # base package installation
@@ -17,4 +17,3 @@ RUN atlas-run-standalone --product jira < /dev/null
 # unlike the above command, this launches Tomcat then hangs, because it feeds its own tail
 # and so stdin will block
 CMD atlas-run-standalone --product jira < /dev/stderr
-

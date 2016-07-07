@@ -1,8 +1,11 @@
 package org.jenkinsci.test.acceptance.docker.fixtures;
 
-import hudson.plugins.jira.soap.JiraSoapService;
-import hudson.plugins.jira.soap.RemoteComment;
-import hudson.plugins.jira.soap.RemoteIssue;
+import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.IssueRestClient;
+import com.atlassian.jira.rest.client.api.domain.Comment;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
+import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
 
 import org.apache.commons.io.IOUtils;
 import org.jenkinsci.jira.JIRA;
@@ -10,16 +13,14 @@ import org.jenkinsci.test.acceptance.docker.DockerContainer;
 import org.jenkinsci.test.acceptance.docker.DockerFixture;
 import org.jenkinsci.test.acceptance.po.CapybaraPortingLayer;
 
-import javax.xml.rpc.ServiceException;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.collections.IteratorUtils;
 
 import static org.jenkinsci.test.acceptance.po.PageObject.*;
 
@@ -29,8 +30,7 @@ import static org.jenkinsci.test.acceptance.po.PageObject.*;
 @DockerFixture(id="jira",ports=2990)
 public class JiraContainer extends DockerContainer {
 
-    private JiraSoapService svc;
-    private String token;
+    private JiraRestClient restClient;
 
     public URL getURL() throws MalformedURLException {
         return new URL("http://" + ipBound(2990) + ':' +port(2990)+"/jira/");
@@ -56,56 +56,30 @@ public class JiraContainer extends DockerContainer {
     }
 
     /**
-     * Creates a project in JIRA
-     *
-     * @param key
-     *      All caps JIRA project unique key like "JENKINS"
-     * @param displayName
-     *      Human readable description.
-     */
-    public void createProject(String key, String displayName) throws IOException, ServiceException {
-        connect();
-        svc.createProject(token, key, displayName, null, null, "admin", null, null, null);
-    }
-
-    public void createProject(String key) throws IOException, ServiceException {
-        createProject(key,createRandomName());
-    }
-
-    /**
      * Creates a new issue in JIRA
      */
-    public void createIssue(String key, String summary, String description) throws IOException, ServiceException {
+    public void createIssue(String key, String summary) throws IOException {
         connect();
-        RemoteIssue issue = new RemoteIssue();
-        issue.setProject(key);
-        issue.setSummary(summary);
-        issue.setDescription(description);
-        issue.setType("3"); // Task
-        svc.createIssue(token, issue);
+        final IssueRestClient issueClient = restClient.getIssueClient();
+        final IssueInput newIssue = new IssueInputBuilder(key, 1L, summary).build();
+        issueClient.createIssue(newIssue).claim();
     }
 
-    public void createIssue(String key) throws IOException, ServiceException {
-        createIssue(key,createRandomName(),createRandomName());
+    public void createIssue(String key) throws IOException {
+        createIssue(key, createRandomName());
     }
 
-    private void connect() throws IOException, ServiceException {
-        if (svc==null) {
-            svc = JIRA.connect(getURL());
-            token = svc.login("admin", "admin");
+    private void connect() throws IOException {
+        if (restClient==null) {
+            restClient = JIRA.connect(getURL(), "admin", "admin");
         }
     }
 
-    public List<RemoteComment> getComments(String ticket) throws IOException, ServiceException {
-        connect();
-        return Arrays.asList(svc.getComments(token, ticket));
+    public List<Comment> getComments(String ticket) throws IOException {
+        final IssueRestClient issueClient = restClient.getIssueClient();
+        final Issue issue = issueClient.getIssue(ticket).claim();
+        final Iterable<Comment> comments = issue.getComments();
+        return IteratorUtils.toList(comments.iterator());
     }
 
-    public JiraSoapService getSvc() {
-        return svc;
-    }
-
-    public String getToken() {
-        return token;
-    }
 }
