@@ -2,7 +2,6 @@ package org.jenkinsci.test.acceptance.docker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import org.jenkinsci.test.acceptance.junit.Resource;
 import org.jenkinsci.utils.process.ProcessUtils;
 
@@ -12,6 +11,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import static java.lang.String.*;
+import java.net.InetAddress;
 
 /**
  * Running container, a virtual machine.
@@ -82,6 +82,9 @@ public class DockerContainer implements Closeable {
     public String ipBound(int n) {
         assertRunning();
         try {
+            if (sharingHostDockerService()) {
+                return getIpAddress();
+            }
             String out = Docker.cmd("port").add(cid, n).popen().verifyOrDieWith("docker port command failed").trim();
             if (out.isEmpty())  // expected to return single line like "0.0.0.0:55326"
                 throw new IllegalStateException(format("Port %d is not mapped for container %s", n, cid));
@@ -97,6 +100,9 @@ public class DockerContainer implements Closeable {
     public int port(int n) {
         assertRunning();
         try {
+            if (sharingHostDockerService()) {
+                return n;
+            }
             String out = Docker.cmd("port").add(cid, n).popen().verifyOrDieWith("docker port command failed").trim();
             if (out.isEmpty())  // expected to return single line like "0.0.0.0:55326"
                 throw new IllegalStateException(format("Port %d is not mapped for container %s", n, cid));
@@ -169,5 +175,14 @@ public class DockerContainer implements Closeable {
     @Override
     public String toString() {
         return "Docker container " + cid;
+    }
+    
+    /**
+     * Support the case when ATHs are running in a docker container and
+     * using the host docker service to spin "sibling" containers, as
+     * described in http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
+     */
+    public boolean sharingHostDockerService() {
+        return Boolean.valueOf(System.getenv("SHARED_DOCKER_SERVICE"));
     }
 }
